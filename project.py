@@ -8,8 +8,8 @@ import sys
 settings = Settings()
 
 def main():
-    while Wizard.stepFor(settings) != Wizard.Step.FINISHED:
-        Wizard.promptFor(settings)
+    settings.summary()
+
 
 if __name__ == "__main__":
     main()

@@ -2,45 +2,24 @@ from dataclasses import field
 
 from settings import Settings
 from csvFileHelper import CsvFileHelper
-from enum import Enum
+from constants import Constants
 
 class Wizard:
 
-    class Step(Enum):
-        FINISHED = -1
-        ANALYTICS = 0
-        RESULT_FILE_NAME = 1
-        FIELD_WEIGHTS = 2
-
     @classmethod
-    def stepFor(cls, settings):
-        if settings.analytics == None:
-            return Wizard.Step.ANALYTICS
-        elif settings.resultFileName == None:
-            return Wizard.Step.RESULT_FILE_NAME
-        elif settings.fieldWeights == None:
-            return  Wizard.Step.FIELD_WEIGHTS
-        return Wizard.Step.FINISHED
-
-    @classmethod
-    def promptFor(cls, settings: Settings):
-        step = cls.stepFor(settings)
-        Wizard.promptAt(step, settings)
-
-    @classmethod
-    def promptAt(cls, step: Step, settings: Settings):
+    def promptAt(cls, step: Constants.Step, settings: Settings):
+        print()
+        print(f"{step.value}. {step.message}:")
+        print()
         match step:
-            case Wizard.Step.ANALYTICS:
-                print()
-                print("You didn't specify the analytics file name in the input arguments.")
+            case Constants.Step.ANALYTICS:
                 list = CsvFileHelper.getCurrentFiles(settings.feed)
                 def fileErrMsg():
                     print()
                     print("Some problems with file path you've provided")
                     print()
                 if len(list) > 0:
-                    print()
-                    print("But we found some file(s) in the current folder:")
+                    print("We found some file(s) in the current folder:")
                     while True:
                         for i, f in enumerate(list):
                             print(f"{i + 1}. {f}")
@@ -68,7 +47,6 @@ class Wizard:
                     while True:
                         for i, f in enumerate(list):
                             print(f"{i + 1}. {f}")
-                        print()
                         file = input("Enter file path: ")
                         try:
                             CsvFileHelper.fileCheck(file)
@@ -78,53 +56,40 @@ class Wizard:
                             fileErrMsg()
                             continue
 
-            case Wizard.Step.RESULT_FILE_NAME:
-                print()
-                print("(Optional) You can define result file name or leave empty for default value.")
-                print(f"By default it's: {Settings.defaultResultName}")
-                print()
+            case Constants.Step.RESULT_FILE_NAME:
                 settings.resultFileName = input("Input: ")
 
-            case Wizard.Step.FIELD_WEIGHTS:
-                fieldWeights = Settings.FieldWeight()
-                print()
-                print("(Optional) You can define field weights in the following format:")
+            case Constants.Step.FIELD_WEIGHTS:
+                print("You can define field weights in the following format:")
                 print("xx-xx-xx-xx")
-                print(", where xx is a value of weight for Number of Users, Average Time, Number of Events and Engagement Rate respectively.")
-                print("Or leave empty for default values.")
-                print("By default it's:")
-                fieldWeights.printWeights()
+                print(", where xx is a value of weight for Number of Users (usrs), Average Time (avg_tm), Number of Events (evnts) and Engagement Rate (eng_rt) respectively.")
                 print()
                 while True:
                     inpt = input("Input: ")
-                    if inpt == "":
-                        settings.fieldWeights = fieldWeights
-                        break
+                    list = inpt.split("-")
+                    if len(list) != 4:
+                        print("There are should be 4 weights integer values in following format: xx-xx-xx-xx")
+                        continue
                     else:
-                        list = inpt.split("-")
-                        if len(list) != 4:
-                            print("There are should be 4 weights integer values in following format: xx-xx-xx-xx")
-                            continue
-                        else:
-                            newWeights = Settings.FieldWeight()
-                            flag = True
-                            for i, item in enumerate(list):
-                                if item.isdigit():
-                                    match i:
-                                        case 0:
-                                            newWeights.user = int(item)
-                                        case 1:
-                                            newWeights.avgTime = int(item)
-                                        case 2:
-                                            newWeights.events = int(item)
-                                        case 1:
-                                            newWeights.engagement = int(item)
-                                else:
-                                    flag = False
-                                    continue
-                            settings.fieldWeights = newWeights
-                            if flag:
-                                break
+                        fieldWeights = Settings.FieldWeight()
+                        flag = True
+                        for i, item in enumerate(list):
+                            if item.isdigit():
+                                match i:
+                                    case 0:
+                                        fieldWeights.user = int(item)
+                                    case 1:
+                                        fieldWeights.avgTime = int(item)
+                                    case 2:
+                                        fieldWeights.events = int(item)
+                                    case 3:
+                                        fieldWeights.engagement = int(item)
+                            else:
+                                flag = False
+                                continue
+                        settings.fieldWeights = fieldWeights
+                        if flag:
+                            break
 
             case 3:
                 print("2")
