@@ -7,10 +7,8 @@ from constants import Constants
 class Wizard:
 
     @classmethod
-    def promptAt(cls, step: Constants.Step, settings: Settings):
-        print()
-        print(f"{step.value}. {step.message}:")
-        print()
+    def promptFor(cls, settings: Settings, step: Constants.Step):
+        Constants.prnt(f"{step.value}. {step.message}:", Constants.MsgType.STEP)
         match step:
             case Constants.Step.ANALYTICS:
                 list = CsvFileHelper.getCurrentFiles(settings.feed)
@@ -62,7 +60,7 @@ class Wizard:
             case Constants.Step.FIELD_WEIGHTS:
                 print("You can define field weights in the following format:")
                 print("xx-xx-xx-xx")
-                print(", where xx is a value of weight for Number of Users (usrs), Average Time (avg_tm), Number of Events (evnts) and Engagement Rate (eng_rt) respectively.")
+                print(", where xx is a value of weight for Number of Users, Average Time, Number of Events and Engagement Rate respectively.")
                 print()
                 while True:
                     inpt = input("Input: ")
