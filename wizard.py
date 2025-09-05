@@ -4,90 +4,99 @@ from settings import Settings
 from csvFileHelper import CsvFileHelper
 from constants import Constants
 
+import builtins
+
 class Wizard:
 
     @classmethod
     def promptFor(cls, settings: Settings, step: Constants.Step):
-        Constants.prnt(f"{step.value}. {step.message}:", Constants.MsgType.STEP)
+        def cancelMsg():
+            print("Type 0 to cancel")
+            print()
+
+        Constants.prnt(f"{step.value}. {str(step)}:", Constants.MsgType.STEP)
         match step:
             case Constants.Step.ANALYTICS:
                 list = CsvFileHelper.getCurrentFiles(settings.feed)
-                def fileErrMsg():
-                    print()
-                    print("Some problems with file path you've provided")
-                    print()
+                range = None
                 if len(list) > 0:
-                    print("We found some file(s) in the current folder:")
-                    while True:
-                        for i, f in enumerate(list):
-                            print(f"{i + 1}. {f}")
-                        print()
-                        print("Select one (specify file number) or enter file path:")
-                        print()
-                        inpt = input("Input: ")
-                        if inpt.isdigit():
-                            n = int(inpt)
-                            if n < len(list):
-                                settings.analytics = list[n]
-                                break
-                            else:
-                                print("You enter wrong number of file")
-                        else:
-                            try:
-                                CsvFileHelper.fileCheck(inpt)
-                                settings.analytics = inpt
-                                break
-                            except:
-                                fileErrMsg()
-                                continue
-
+                    Constants.prnt("We found some file(s) in the current folder:")
+                    for i, f in enumerate(list):
+                        print(f"{i + 1}. {f}")
+                    Constants.prnt("Select one by entering file's key number or enter file path")
+                    range = (1, len(list))
                 else:
-                    while True:
-                        for i, f in enumerate(list):
-                            print(f"{i + 1}. {f}")
-                        file = input("Enter file path: ")
-                        try:
-                            CsvFileHelper.fileCheck(file)
-                            settings.analytics = file
-                            break
-                        except:
-                            fileErrMsg()
-                            continue
+                    Constants.prnt("Enter path to analytics file")
+
+                cancelMsg()
+                inpt = Constants.inpt(range=range,
+                                      type=Constants.InputType.CSV_FILE)
+                match type(inpt):
+                    case builtins.int:
+                        if inpt == 0:
+                            return
+                        else:
+                            settings.analytics = list[inpt - 1]
+                    case builtins.str:
+                        settings.analytics = inpt
 
             case Constants.Step.RESULT_FILE_NAME:
-                settings.resultFileName = input("Input: ")
+                cancelMsg()
+                inpt = Constants.inpt(type=Constants.InputType.STRING)
+                match type(inpt):
+                    case builtins.str:
+                        settings.resultFileName = inpt
 
             case Constants.Step.FIELD_WEIGHTS:
-                print("You can define field weights in the following format:")
-                print("xx-xx-xx-xx")
-                print(", where xx is a value of weight for Number of Users, Average Time, Number of Events and Engagement Rate respectively.")
-                print()
-                while True:
-                    inpt = input("Input: ")
-                    list = inpt.split("-")
-                    if len(list) != 4:
-                        print("There are should be 4 weights integer values in following format: xx-xx-xx-xx")
-                        continue
-                    else:
-                        fieldWeights = Settings.FieldWeight()
-                        flag = True
-                        for i, item in enumerate(list):
-                            if item.isdigit():
-                                match i:
-                                    case 0:
-                                        fieldWeights.user = int(item)
-                                    case 1:
-                                        fieldWeights.avgTime = int(item)
-                                    case 2:
-                                        fieldWeights.events = int(item)
-                                    case 3:
-                                        fieldWeights.engagement = int(item)
-                            else:
-                                flag = False
-                                continue
-                        settings.fieldWeights = fieldWeights
-                        if flag:
-                            break
+                settings.fieldWeights.views = Constants.inpt(title="Views: ")
+                settings.fieldWeights.users = Constants.inpt(title="Users: ")
+                settings.fieldWeights.viewsUserRate = Constants.inpt(title="Views per User Rate: ")
+                settings.fieldWeights.avgTime = Constants.inpt(title="Avg. Time: ")
+                settings.fieldWeights.events = Constants.inpt(title="Events: ")
+                settings.fieldWeights.keyEvents = Constants.inpt(title="Key Events: ")
 
-            case 3:
+            case Constants.Step.COL_NAMES:
+                cancelMsg()
+                for i, t in enumerate(["ID: ", "Rate: "]):
+                    inpt = Constants.inpt(title=t, type=Constants.InputType.STRING)
+                    colName = inpt
+                    match type(inpt):
+                        case builtins.int:
+                            if inpt == 0:
+                                return
+                            else:
+                                colName = str(inpt)
+                    if i == 0:
+                        settings.columnNames.sku = colName
+                    else:
+                        settings.columnNames.rate = colName
+
+            case Constants.Step.REGEX:
+                Constants.prnt("You can define the raw regular expression (regex)")
+                print("or you can enter simplified version of it by starting 's'-symbol.")
+                Constants.prnt("So, simplified regex starts with 's'-symbol.")
+                print("Then in pattern you can mark 'x' for any symbol,")
+                print("'n' is for digit,")
+                print("and '*' is for any amount of symbols.")
+                print("For example if your alias looks like:")
+                print("https://somesite.com/target-item-sku5522-smth")
+                print("You can define simplified regex as:")
+                print("s*xxxnnnn-xxxx")
+                Constants.prnt("Leave empty if you do not want to filter items by regex and take into account whole data.")
+                print()
+                cancelMsg()
+                re = Constants.inpt(type=Constants.InputType.STRING, emptyAllowed=True)
+                match type(re):
+                    case builtins.str:
+                        if re == "":
+                            settings.regexSimplified = None
+                            settings.regex = None
+                        elif re[0] == "s":
+                            settings.regexSimplified = re
+                            settings.regex = re
+                        else:
+                            settings.regexSimplified = None
+                            settings.regex = re
+
+            case Constants.Step.FEED_MAPPING:
                 print("2")

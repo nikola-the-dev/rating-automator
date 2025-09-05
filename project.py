@@ -16,11 +16,14 @@ def main():
         Constants.prnt("To change any setting parameter, enter the appropriate Key number from the table,")
         print("or enter 9 to start calculations and generate the final file")
         print()
-        code = Constants.inpt((1, len(Constants.Step)), 9)
+        code = Constants.inpt(range=(1, len(Constants.Step)), exit=9)
         if code == 9:
-            print("Calculate")
-            break
-        elif step := Constants.Step.get(code):
+            if settings.analytics == None:
+                Wizard.promptFor(settings, Constants.Step.ANALYTICS)
+            else:
+                CsvFileHelper.processFor(settings)
+                break
+        elif step := Constants.Step(code):
             Wizard.promptFor(settings, step)
 
 

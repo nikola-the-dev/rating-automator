@@ -1,9 +1,10 @@
 from tabulate import tabulate
 from enum import Enum
 
-from csvFileHelper import CsvFileHelper
 from constants import Constants
 from regexHelper import RegexHelper
+
+import textwrap
 
 
 class Settings:
@@ -28,11 +29,11 @@ class Settings:
 
         def __init__(self):
             self.views = 0
-            self.users = 20
+            self.users = 5
             self.viewsUserRate = 5
             self.avgTime = 10
-            self.events = 25
-            self.keyEvents = 40
+            self.events = 20
+            self.keyEvents = 30
 
         def allElems(self):
             return [self.views, self.users, self.viewsUserRate, self.avgTime, self.events, self.keyEvents]
@@ -49,11 +50,11 @@ class Settings:
     def __init__(self):
         self.analytics = None
         self.feed = None
-        self.resultFileName = "result.csv"
+        self.resultFileName = ""
         self.fieldWeights = Settings.FieldWeight()
         self.columnNames = Settings.ColumnNames()
         self.regex = None
-        self.isRegexSimplified = False
+        self.regexSimplified = None
         self.feedMapping = None
 
 
@@ -64,7 +65,7 @@ class Settings:
         if f := self.feed:
             if RegexHelper.isUrl(f):
                 return Settings.FeedType.URL
-            elif CsvFileHelper.extFileCheck(f):
+            elif Constants.extFileCheck(f):
                 return Settings.FeedType.CSV_FILE
         return Settings.FeedType.UNDEFINED
 
@@ -73,11 +74,12 @@ class Settings:
         return self._resultFileName
     @resultFileName.setter
     def resultFileName(self, result):
-        if r := result:
-            if CsvFileHelper.extFileCheck(r) == False:
-                r += ".csv"
-            self._resultFileName = r
-        self._resultFileName = result
+        r = result
+        if r == "":
+            r = "result"
+        if Constants.extFileCheck(r) == False:
+            r += ".csv"
+        self._resultFileName = r
 
 
     # Interface methods
@@ -88,7 +90,7 @@ class Settings:
                 Constants.Step.RESULT_FILE_NAME: self.resultFileName,
                 Constants.Step.FIELD_WEIGHTS: self.fieldWeights,
                 Constants.Step.COL_NAMES: self.columnNames,
-                Constants.Step.REGEX: self.regex,
+                Constants.Step.REGEX: self.regex if self.regexSimplified == None else self.regexSimplified,
                 Constants.Step.FEED: self.feed,
                 Constants.Step.FEED_MAPPING: self.feedMapping
                 }
@@ -96,13 +98,15 @@ class Settings:
         for key in Constants.Step:
             if (key == Constants.Step.FEED_MAPPING) & (self.feedType != Settings.FeedType.CSV_FILE):
                 continue
+            name = str(key)
+            if key == Constants.Step.FIELD_WEIGHTS:
+                name += " (Views - Users - Views/User_Rate - Avg.Time - Events - Key_Events)"
+            elif key == Constants.Step.FEED:
+                name += " (.csv file or link to Google Merchant Center .xml file)"
+            nameValue = "\n".join(textwrap.wrap(str(name), width=50))
             body.append([key.value,
-                         key.message,
+                         nameValue,
                          Constants.valueStr(dict[key])
                          ])
-            if key == Constants.Step.FIELD_WEIGHTS:
-                body.append(["", "(Views - Users - Views/User Rate - Avg.Time - Events - Key Events)", ""])
-            elif key == Constants.Step.FEED:
-                body.append(["", "(.csv file or link to Google Merchant Center .xml file)", ""])
-        print(tabulate(body, headers, "outline"))
+        print(tabulate(body, headers, "fancy_grid"))
 
