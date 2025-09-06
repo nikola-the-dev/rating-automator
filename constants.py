@@ -1,5 +1,7 @@
 import os
+
 from enum import Enum
+from regexHelper import RegexHelper
 
 class Constants:
 
@@ -25,9 +27,9 @@ class Constants:
                 case self.REGEX:
                     return "Regular expression for filtering aliases in analytics file"
                 case self.FEED:
-                    return "(Optional) Feed with all items"
+                    return "(Required) Feed with all items"
                 case self.FEED_MAPPING:
-                    return "Feed mapping"
+                    return "(Required) Feed file columns mapping"
             return self.name
 
 
@@ -116,8 +118,14 @@ class Constants:
                             Constants.prnt("There is some problem with file")
                             continue
                     case Constants.InputType.CSV_FILE_OR_XML_LINK:
-                        print("Feed issues")
-                        continue
+                        try:
+                            _ = cls.fileCheck(inpt)
+                            return inpt
+                        except:
+                            if RegexHelper.isUrl(inpt):
+                                return inpt
+                            else:
+                                continue
 
     @classmethod
     def fileCheck(cls, file):

@@ -1,9 +1,9 @@
 import os
 import csv
-from sys import flags
 
 from constants import Constants
 from settings import Settings
+from regexHelper import RegexHelper
 
 
 class CsvFileHelper:
@@ -63,6 +63,7 @@ class CsvFileHelper:
     @classmethod
     def processFor(cls, settings: Settings):
         avgTotal = CsvFileHelper.Item()
+        totalCounter = 0
         itemsDict = {}
         with open(settings.analytics) as file:
             reader = csv.reader(file)
@@ -72,15 +73,36 @@ class CsvFileHelper:
                     elems = a.split("/")
                     if len(elems) >= 3:
                         key = elems[-2]
+                        if r := settings.regex:
+                            if RegexHelper.isMatch(r, key):
+                                pass
+                            else:
+                                continue
                         currentItem = CsvFileHelper.Item(v, u, vu, t, e, ke)
                         if key in itemsDict.keys():
                             currentItem += itemsDict[key]
                         itemsDict[key] = currentItem
 
-                        flag = avgTotal.users != 0
                         avgTotal += currentItem
-                        if flag:
-                            avgTotal /= 2
+                        totalCounter += 1
                 except:
                     continue
 
+
+    @classmethod
+    def preview(cls, path: str, rowsPreview = 2):
+        header = []
+        body = []
+        if rowsPreview > 0:
+            with open(path) as file:
+                reader = csv.reader(file)
+                for i, row in enumerate(reader):
+                    match i:
+                        case 0:
+                            header = row
+                        case _:
+                            body.append([Constants.shrink(item, 30) for item in row])
+                    if i == rowsPreview:
+                        break
+            body.append(["..." for _ in range(len(header))])
+        return (header, body)

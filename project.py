@@ -1,9 +1,9 @@
+import sys
+
 from constants import Constants
 from settings import Settings
 from wizard import Wizard
 from csvFileHelper import CsvFileHelper
-
-import sys
 
 
 settings = Settings()
