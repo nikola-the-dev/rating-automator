@@ -1,5 +1,7 @@
 import os
 import csv
+import requests
+import xml.etree.ElementTree as ET
 
 from constants import Constants
 from settings import Settings
@@ -70,9 +72,7 @@ class CsvFileHelper:
             for row in reader:
                 try:
                     a, v, u, vu, t, e, ke, _ = row
-                    elems = a.split("/")
-                    if len(elems) >= 3:
-                        key = elems[-2]
+                    if key := cls.fetchKeyAlias(a):
                         if r := settings.regex:
                             if RegexHelper.isMatch(r, key):
                                 pass
@@ -87,6 +87,56 @@ class CsvFileHelper:
                         totalCounter += 1
                 except:
                     continue
+        avgTotal /= totalCounter
+
+        resultData = [[settings.columnNames.sku, settings.columnNames.rate]]
+
+        if settings.feedType == Settings.FeedType.URL:
+            response = requests.get(settings.feed)
+            if response.status_code == 200:
+                root = ET.fromstring(response.content)
+                items = root.find("channel").findall("item")
+                ns = {"g": "http://base.google.com/ns/1.0"}
+                for item in items:
+                    sku = item.find("g:id", ns)
+                    alias = item.find("g:link", ns)
+                    print(sku.text)
+                    print(alias.text)
+
+        else:
+            with open(settings.feed) as file:
+                reader = csv.reader(file)
+                for row in reader:                
+                    if key := cls.fetchKeyAlias(row[settings.feedMapping.alias]):
+                        sku = row[settings.feedMapping.sku]
+                        rating = 0.0
+                        if key in itemsDict:
+                            def calculate(current, avg, weight):
+                                if (current == 0.0) | (avg == 0.0) | (weight == 0.0):
+                                    return 0.0
+                                return current / avg * weight 
+                            item: CsvFileHelper.Item = itemsDict[key]
+                            rating = calculate(item.views, avgTotal.views, settings.fieldWeights.views)
+                            rating += calculate(item.users, avgTotal.users, settings.fieldWeights.users)
+                            rating += calculate(item.avgTime, avgTotal.avgTime, settings.fieldWeights.avgTime)
+                            rating += calculate(item.events, avgTotal.events, settings.fieldWeights.events)
+                            rating += calculate(item.kEvents, avgTotal.kEvents, settings.fieldWeights.keyEvents)
+                            rating /= settings.fieldWeights.totalWeights()
+                            rating *= 100.0
+                        resultData.append([sku, rating])
+        
+        with open(settings.resultFileName, "w") as file:
+            writer = csv.writer(file)
+            writer.writerows(resultData)
+
+
+
+    @classmethod
+    def fetchKeyAlias(cls, source):
+        elems = source.split("/")
+        if len(elems) >= 3:
+            return elems[-2]
+        return None
 
 
     @classmethod

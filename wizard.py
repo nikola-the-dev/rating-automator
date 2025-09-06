@@ -122,11 +122,24 @@ class Wizard:
             case Constants.Step.FEED_MAPPING:
                 Constants.prnt("Feed file preview:")
                 h, b = CsvFileHelper.preview(settings.feed)
-                h = [f"{i + 1}\n{t}" for i, t in enumerate(h)]
-                print(tabulate(b, h, "fancy_grid"))
+                finalHeader = [f"{i + 1}\n{t}" for i, t in enumerate(h)]
+                print(tabulate(b, finalHeader, "fancy_grid"))
                 Constants.prnt("Enter the table column number that corresponds to the value.")
                 cancelMsg()
-                inpt = Constants.inpt(title="SKU: ",
-                                      range=(1, len(h)),
-                                      type=Constants.InputType.CSV_FILE_OR_XML_LINK)
-                
+                for i, t in enumerate(["SKU: ", "Alias: "]):
+                    inpt = Constants.inpt(title=t,
+                                          exclude=None if i == 0 else (settings.feedMapping.sku + 1),
+                                          range=(1, len(h)))
+                    match type(inpt):
+                        case builtins.int:
+                            if inpt == 0:
+                                return
+                            else:
+                                index = inpt - 1
+                                colTitle = h[index]
+                                if i == 0:                                    
+                                    settings.feedMapping.sku = index                                    
+                                    settings.feedMapping.skuColName = colTitle
+                                else: 
+                                    settings.feedMapping.alias = index                                    
+                                    settings.feedMapping.aliasColName = colTitle

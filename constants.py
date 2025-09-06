@@ -82,6 +82,7 @@ class Constants:
     @classmethod
     def inpt(cls, title: str = "Input: ",
              range: (int, int) = None,
+             exclude: int = None,
              type = InputType.NUMBER,
              exit: int = 0,
              emptyAllowed = False
@@ -98,7 +99,10 @@ class Constants:
                 if number == exit:
                     return number
                 elif r := range:
-                    if r[0] <= int(inpt) <= r[1]:
+                    if r[0] <= number <= r[1]:
+                        if e := exclude:
+                            if e == number:
+                                continue
                         return number
                     else:
                         continue

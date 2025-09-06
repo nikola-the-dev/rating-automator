@@ -33,11 +33,14 @@ class Settings:
 
         def __str__(self):
             parts = []
-            if s := self.sku:
-                parts.append(f"{self.skuColName} ({s}) is for SKU values")
-            if a := self.alias:
-                parts.append(f"{self.aliasColName} ({a}) is for item alias values")
-            return "; ".join(parts)
+            if self.skuColName != "":
+                parts.append(f"{self.skuColName} ({self.sku + 1}) -> SKU")
+            if self.aliasColName != "":
+                parts.append(f"{self.aliasColName} ({self.alias + 1}) -> Alias")
+            if len(parts) == 0:
+                return Constants.valueStr(None)
+            else:
+                return "\n".join(parts)
 
 
     class FieldWeight:
@@ -57,19 +60,21 @@ class Settings:
             return "-".join([str(item) for item in self.allElems()])
 
         def totalWeights(self):
-            return sum(self.allElems())
+            list = self.allElems()
+            return sum(list)
 
 
     # Instance initialization
 
     def __init__(self):
         self.analytics = None
-        self.feed = None
+        # self.feed = None
+        self.feed = "https://dreams.global/marketplace-integration/google-feed?langId=3"
         self.resultFileName = ""
         self.fieldWeights = Settings.FieldWeight()
         self.columnNames = Settings.ColumnNames()
         self.regex = RegexHelper.ITEM_ALIAS
-        self.feedMapping = None
+        self.feedMapping = Settings.FeedMapColumnNames()
 
 
     # Variables
@@ -123,7 +128,9 @@ class Settings:
                 if r := dict[key]:
                     if len(r) > 30:
                         fullRegex = f"(*) {key.value}. Full regex:\n{r}"
-                        fieldValue = "You can find current regex pattern below the table (*)"
+                        fieldValue = "You can find current regex\npattern below the table (*)"
+            elif key == Constants.Step.FEED_MAPPING:
+                fieldValue = str(dict[key])
 
             nameValue = "\n".join(textwrap.wrap(str(name), width=50))
 
