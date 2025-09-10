@@ -64,6 +64,17 @@ class CsvFileHelper:
 
     @classmethod
     def processFor(cls, settings: Settings):
+        if a := settings.analytics:
+            if not os.path.isfile(a):
+                raise FileNotFoundError("1. There is some problem with analytics file")
+        else:
+            raise ValueError("1. You did not set analytics file")
+        if f := settings.feed:
+            if settings.feedType == Settings.FeedType.CSV_FILE:
+                if not os.path.isfile(a):
+                    raise FileNotFoundError("6. There is some problem with feed file")
+        else:
+            raise ValueError("6. You did not set any feed source")
         avgTotal = CsvFileHelper.Item()
         totalCounter = 0
         itemsDict = {}
@@ -91,6 +102,25 @@ class CsvFileHelper:
 
         resultData = [[settings.columnNames.sku, settings.columnNames.rate]]
 
+        def calculateRate(sku, alias):
+            rating = 0.0
+            if key := cls.fetchKeyAlias(alias):
+                if key in itemsDict:
+                    def calculate(current, avg, weight):
+                        if (current == 0.0) | (avg == 0.0) | (weight == 0.0):
+                                return 0.0
+                        return current / avg * weight 
+                    item: CsvFileHelper.Item = itemsDict[key]
+                    rating = calculate(item.views, avgTotal.views, settings.fieldWeights.views)
+                    rating += calculate(item.users, avgTotal.users, settings.fieldWeights.users)
+                    rating += calculate(item.avgTime, avgTotal.avgTime, settings.fieldWeights.avgTime)
+                    rating += calculate(item.events, avgTotal.events, settings.fieldWeights.events)
+                    rating += calculate(item.kEvents, avgTotal.kEvents, settings.fieldWeights.keyEvents)
+                    rating /= settings.fieldWeights.totalWeights()
+                    rating *= 100.0    
+                            
+            return [sku, rating]
+
         if settings.feedType == Settings.FeedType.URL:
             response = requests.get(settings.feed)
             if response.status_code == 200:
@@ -98,32 +128,21 @@ class CsvFileHelper:
                 items = root.find("channel").findall("item")
                 ns = {"g": "http://base.google.com/ns/1.0"}
                 for item in items:
-                    sku = item.find("g:id", ns)
-                    alias = item.find("g:link", ns)
-                    print(sku.text)
-                    print(alias.text)
+                    sku = item.find("g:id", ns).text
+                    alias = item.find("g:link", ns).text
+                    resultData.append(calculateRate(sku, alias))
+            else:
+                raise FileNotFoundError("6. There is some problem with link you have provided")
 
         else:
             with open(settings.feed) as file:
                 reader = csv.reader(file)
-                for row in reader:                
-                    if key := cls.fetchKeyAlias(row[settings.feedMapping.alias]):
+                for row in reader:        
+                    alias = row[settings.feedMapping.alias]
+                    if RegexHelper.isUrl(alias):
                         sku = row[settings.feedMapping.sku]
-                        rating = 0.0
-                        if key in itemsDict:
-                            def calculate(current, avg, weight):
-                                if (current == 0.0) | (avg == 0.0) | (weight == 0.0):
-                                    return 0.0
-                                return current / avg * weight 
-                            item: CsvFileHelper.Item = itemsDict[key]
-                            rating = calculate(item.views, avgTotal.views, settings.fieldWeights.views)
-                            rating += calculate(item.users, avgTotal.users, settings.fieldWeights.users)
-                            rating += calculate(item.avgTime, avgTotal.avgTime, settings.fieldWeights.avgTime)
-                            rating += calculate(item.events, avgTotal.events, settings.fieldWeights.events)
-                            rating += calculate(item.kEvents, avgTotal.kEvents, settings.fieldWeights.keyEvents)
-                            rating /= settings.fieldWeights.totalWeights()
-                            rating *= 100.0
-                        resultData.append([sku, rating])
+                        resultData.append(calculateRate(sku, alias))
+                    
         
         with open(settings.resultFileName, "w") as file:
             writer = csv.writer(file)
