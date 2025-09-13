@@ -81,7 +81,7 @@ class Constants:
         CSV_FILE_OR_XML_LINK = 3
     @classmethod
     def inpt(cls, title: str = "Input: ",
-             range: (int, int) = None,
+             range: int | int = None,
              exclude: int = None,
              type = InputType.NUMBER,
              exit: int = 0,
@@ -133,7 +133,7 @@ class Constants:
 
     @classmethod
     def fileCheck(cls, file):
-        if cls.extFileCheck(file):
+        if not cls.extFileCheck(file):
             raise ValueError
         if not os.path.exists(file):
             raise FileNotFoundError

@@ -28,7 +28,8 @@ def main():
             try:
                 CsvFileHelper.processFor(settings)
                 Constants.prnt("Success!")
-                print(f"You can find the result in: {settings.resultFileName} file")
+                print(f"You can find the result in {settings.resultFileName} file")
+                print()
                 break
             except ValueError as ve:
                 e = str(ve)

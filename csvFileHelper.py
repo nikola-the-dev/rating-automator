@@ -119,7 +119,7 @@ class CsvFileHelper:
                     rating /= settings.fieldWeights.totalWeights()
                     rating *= 100.0    
                             
-            return [sku, rating]
+            return [sku, round(rating)]
 
         if settings.feedType == Settings.FeedType.URL:
             response = requests.get(settings.feed)
