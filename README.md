@@ -1,5 +1,11 @@
 # Rating Automator
 
+#### Video Demo:  
+
+https://youtu.be/JBX-pXBih3I
+    
+#### Description:
+
 Python script that helps to calculate item popularity rate based on Google Analytics report file (you can find this report in `GA4` open `Reports`, then `Engagement`, and finally `Pages and screens`, and then you can download report as `CSV` file)
 
 ## Table of Contents
