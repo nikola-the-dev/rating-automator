@@ -407,7 +407,7 @@ class InputType(Enum):
     CSV_FILE = 2
     CSV_FILE_OR_XML_LINK = 3
 def raInpt(title: str = "Input: ", 
-           range: (int, int) = None, 
+           range: int | int = None, 
            exclude: int = None, 
            type = InputType.NUMBER, 
            exit: int = 0, 
