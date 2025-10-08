@@ -267,7 +267,7 @@ class Settings:
             print(fullRegex)
 
 
-URL_RE = "(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})"
+URL_RE = r"(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})"
 ITEM_ALIAS = "^.*-([a-z]{1,7}[0-9]{1,9}[a-z]{1,9}(([0-9]{1,5}[a-z]{1,5}[0-9]?)|(-l))?|[a-z]{3,4}-[0-9]{3,6}|[0-9]{4,7}-[a-z]{1,4}|[a-z]{2}[0-9]{2,3}-[a-z]{2}-[0-9]{1,3})$"
 
 class Step(Enum):
@@ -298,6 +298,44 @@ class Step(Enum):
         return self.name
 
 
+def runCalculations(analytics = None):
+    if a := analytics:
+        settings.analytics = a
+        try:
+            processCsvFor(settings)
+            prnt("Success!")
+            print(f"You can find the result in {settings.resultFileName} file")
+            print()
+            return True
+        except:
+            return False
+    else:
+        try:
+            processCsvFor(settings)
+            prnt("Success!")
+            print(f"You can find the result in {settings.resultFileName} file")
+            print()
+            return True
+        except ValueError as ve:
+            e = str(ve)
+            prnt(e)
+            match e[0]:
+                case "1":
+                    promptFor(settings, Step.ANALYTICS)
+                case "6":
+                    promptFor(settings, Step.FEED)
+        except FileNotFoundError as fe:
+            e = str(fe)
+            prnt(e)
+            match e[0]:
+                case "1":
+                    settings.analytics = None
+                    promptFor(settings, Step.ANALYTICS)
+                case "6":
+                    settings.feed = None
+                    promptFor(settings, Step.FEED)
+    return False
+
 
 settings = Settings()
 
@@ -318,30 +356,8 @@ def main():
         print()
         code = raInpt(range=(1, len(Step)), exit=9)
         if code == 9:
-            try:
-                processCsvFor(settings)
-                prnt("Success!")
-                print(f"You can find the result in {settings.resultFileName} file")
-                print()
+            if runCalculations():
                 break
-            except ValueError as ve:
-                e = str(ve)
-                prnt(e)
-                match e[0]:
-                    case "1":
-                        promptFor(settings, Step.ANALYTICS)
-                    case "6":
-                        promptFor(settings, Step.FEED)
-            except FileNotFoundError as fe:
-                e = str(fe)
-                prnt(e)
-                match e[0]:
-                    case "1":
-                        settings.analytics = None
-                        promptFor(settings, Step.ANALYTICS)
-                    case "6":
-                        settings.feed = None
-                        promptFor(settings, Step.FEED)
         elif step := Step(code):
             promptFor(settings, step)
 
@@ -349,7 +365,7 @@ def main():
 
 
 def fileCheck(file):
-    if extFileCheck(file):
+    if not extFileCheck(file):
         raise ValueError
     if not os.path.exists(file):
         raise FileNotFoundError
@@ -697,7 +713,7 @@ def processCsvFor(settings: Settings):
                 rating /= settings.fieldWeights.totalWeights()
                 rating *= 100.0    
                         
-        return [sku, rating]
+        return [sku, round(rating)]
 
     if settings.feedType == Settings.FeedType.URL:
         response = requests.get(settings.feed)
