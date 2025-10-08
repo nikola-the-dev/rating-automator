@@ -38,7 +38,7 @@ Python script that helps to calculate item popularity rate based on Google Analy
 
 ## How to use
 
-As it mentioned above you can set path to analytics file as an argument:
+You can set path to analytics file as an argument:
 ```
 python project.py analytics.csv
 ```
@@ -48,6 +48,11 @@ This field is required but there is not necessary to set it here you can always 
 So you can call it without specifying argument:
 ```
 python project.py
+```
+
+Also you can call short version with argument (especially if you set all settings previously and you need only to receive result file from analytics file):
+```
+python run.py analytics.csv
 ```
 
 ## Interface
